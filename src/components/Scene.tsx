@@ -4,6 +4,7 @@ import StoryCard from "./StoryCard";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Html, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
+import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import rawData from "../data/somatic-complex.json";
 import { runForceSimulation } from "../utils/forceLayout";
 
@@ -310,7 +311,6 @@ function EntryNode({ data, color, onSelect, isSelected, isMobile, highlight, hid
 }) {
   const groupRef = useRef<THREE.Group>(null!);
   const meshRef = useRef<THREE.Mesh>(null!);
-  const glowRef = useRef<THREE.Mesh>(null!);
   const [started] = useState(() => Date.now());
 
   useFrame(({ clock }) => {
@@ -320,7 +320,7 @@ function EntryNode({ data, color, onSelect, isSelected, isMobile, highlight, hid
     const ease = 1 - Math.pow(1 - entry, 3);
     const phase = getAudioPhase();
 
-    if (!groupRef.current || !meshRef.current || !glowRef.current) return;
+    if (!groupRef.current || !meshRef.current) return;
 
     const idx = data.id.charCodeAt(0);
     const stagger = Date.now() - started - idx * 15;
@@ -343,19 +343,10 @@ function EntryNode({ data, color, onSelect, isSelected, isMobile, highlight, hid
     const scale = pulse * se * (isSelected ? 1.3 : 1) * hubBoost;
     meshRef.current.scale.setScalar(scale);
 
-    // Glow follows audio + degree (hubs glow brighter)
-    const degGlow = 1 + degNorm * 0.5;
-    const glowAmp = 1 + combinedPulse * 0.4;
-    glowRef.current.scale.setScalar(glowAmp * (1 + Math.sin(t * 0.35 + idx) * 0.3) * entry * (isSelected ? 1.5 : 1) * degGlow);
-
-    if (glowRef.current.material) {
-      (glowRef.current.material as THREE.MeshStandardMaterial).opacity = (isSelected ? 0.3 : 0.1) * entry * (0.6 + audioWave * 0.4);
-    }
-
     // Node emissive pulse with audio
     if (meshRef.current.material) {
       const mat = meshRef.current.material as THREE.MeshStandardMaterial;
-      const baseIntensity = isSelected ? 0.8 : 0.4;
+      const baseIntensity = isSelected ? 2.5 : 1.0;
       const degEmiss = 1 + (data._degreeNorm || 0) * 0.6;
       mat.emissiveIntensity = baseIntensity * (0.7 + audioWave * 0.3) * degEmiss;
     }
@@ -374,13 +365,9 @@ function EntryNode({ data, color, onSelect, isSelected, isMobile, highlight, hid
 
   return (
     <group ref={groupRef} position={[0, 0, 0]}>
-      <mesh ref={glowRef}>
-        <sphereGeometry args={[data.r * 3, 16, 16]} />
-        <meshBasicMaterial color={color} transparent opacity={0} depthWrite={false} />
-      </mesh>
       <mesh ref={meshRef} onClick={(e) => { e.stopPropagation(); onSelect(); }}>
         <sphereGeometry args={[data.r, 20, 20]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={isSelected ? 0.8 : 0.5} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={isSelected ? 2.5 : 1.0} />
       </mesh>
       {(!isSelected && !hidden) && <Html position={[0, -data.r - 0.6, 0]} center style={{ pointerEvents: "none" }}>
         <span style={{
@@ -643,15 +630,25 @@ function Stars() {
 
 // === CAMERA CONTROLLER ===
 let orbitRef: any = null;
-function CameraController({ isMobile, autoRotate }: { isMobile: boolean; autoRotate: boolean }) {
+const targetPos = new THREE.Vector3();
+function CameraController({ isMobile, autoRotate, selectedNode }: { isMobile: boolean; autoRotate: boolean; selectedNode: any }) {
   const ref = useRef<any>(null!);
   useEffect(() => { orbitRef = ref.current; }, []);
   useEffect(() => {
     if (ref.current) {
-      ref.current.autoRotate = autoRotate;
+      ref.current.autoRotate = autoRotate && !selectedNode;
       ref.current.autoRotateSpeed = 0.6;
     }
-  }, [autoRotate]);
+  }, [autoRotate, selectedNode]);
+
+  useFrame(() => {
+    if (selectedNode && ref.current) {
+      targetPos.set(selectedNode.x, selectedNode.y, selectedNode.z);
+      ref.current.target.lerp(targetPos, 0.05);
+      ref.current.update();
+    }
+  });
+
   return (
     <OrbitControls
       ref={ref}
@@ -659,7 +656,7 @@ function CameraController({ isMobile, autoRotate }: { isMobile: boolean; autoRot
       enableZoom={true}
       maxDistance={isMobile ? 100 : 120}
       minDistance={isMobile ? 0.8 : 0.3}
-      autoRotate={autoRotate}
+      autoRotate={autoRotate && !selectedNode}
       autoRotateSpeed={0.6}
       zoomSpeed={isMobile ? 1.0 : 1.5}
     />
@@ -909,7 +906,11 @@ const Scene: React.FC = () => {
           );
         })}
 
-        <CameraController isMobile={isMobile} autoRotate={autoRotate} />
+        <CameraController isMobile={isMobile} autoRotate={autoRotate} selectedNode={selectedNode} />
+
+        <EffectComposer>
+          <Bloom luminanceThreshold={0.2} luminanceSmoothing={0.9} height={300} />
+        </EffectComposer>
       </Canvas>
 
       {/* Branding */}
