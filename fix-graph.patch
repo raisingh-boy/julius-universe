@@ -1,0 +1,10 @@
+--- src/utils/forceLayout.ts
++++ src/utils/forceLayout.ts
+@@ -35,7 +35,7 @@
+   groupOrder.forEach((g, i) => {
+     const angle = (i / groupOrder.length) * Math.PI * 2;
+     groupZ[g] = {
+-      z: Math.sin(angle) * 3,  // Z offset creates depth layers
++      z: Math.sin(angle) * 3,
+     };
+   });
