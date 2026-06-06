@@ -1064,7 +1064,7 @@ export default function App() {
     />
 
     {/* 3. FIXED BOTTOM CONTROLS HUD OVERLAYS BAR */}
-    <footer className="h-[calc(4rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] border-t border-[#ffffff10] bg-[#050505]/95 backdrop-blur-md flex items-center justify-between px-6 z-50 relative shrink-0 w-full bottom-0 left-0">
+    <footer className="h-16 border-t border-[#ffffff10] bg-[#050505]/95 backdrop-blur-md flex items-center justify-between px-6 z-30 relative shrink-0">
       
       {/* Helper informational text block */}
       <div className="hidden lg:flex items-center gap-2 text-[10px] font-mono text-gray-500 leading-none">
@@ -1073,7 +1073,7 @@ export default function App() {
       </div>
 
       {/* Big Glow interactive ADD Button Centred (✧ Добавить смысл ✧) */}
-      <div className="absolute left-1/2 -translate-x-1/2 -top-6 z-50">
+      <div className="absolute left-1/2 -translate-x-1/2 -top-6">
         <button
           onClick={() => {
             if (!userEmail) {

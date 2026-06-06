@@ -108,11 +108,10 @@ function SomaticSphere({
 // КОМПОНЕНТ РЕБРА (Curved Mycelial Strand + Interactive Signal Particle)
 // ============================================================
 function MyceliumEdge({
-  source, target, color, activity, isActive, edgeType
+  source, target, color, activity, isActive
 }: {
   source: SomaticNode; target: SomaticNode;
   color: string; activity: number; isActive: boolean;
-  edgeType?: string;
 }) {
   const lineRef = useRef<THREE.Line>(null!);
   const particleRef = useRef<THREE.Mesh>(null!);
@@ -143,11 +142,7 @@ function MyceliumEdge({
 
     if (lineRef.current) {
       const pts = curve.getPoints(24);
-      const geom = lineRef.current.geometry as THREE.BufferGeometry;
-      geom.setFromPoints(pts);
-      if (edgeType === 'conceptual' || edgeType === 'practical') {
-        lineRef.current.computeLineDistances();
-      }
+      (lineRef.current.geometry as THREE.BufferGeometry).setFromPoints(pts);
     }
 
     if (particleRef.current) {
@@ -163,19 +158,7 @@ function MyceliumEdge({
     <group>
       <line ref={lineRef as any}>
         <bufferGeometry />
-        {edgeType === 'conceptual' ? (
-           <lineDashedMaterial color="#88CCFF" transparent opacity={opacity * 0.8} dashSize={0.2} gapSize={0.1} />
-        ) : edgeType === 'historical' ? (
-           <lineBasicMaterial color="#FFB84D" transparent opacity={opacity} />
-        ) : edgeType === 'practical' ? (
-           <lineDashedMaterial color="#4DFF88" transparent opacity={opacity} dashSize={0.05} gapSize={0.1} />
-        ) : edgeType === 'opposition' ? (
-           <lineBasicMaterial color="#FF4D4D" transparent opacity={opacity * (1.2 + Math.sin(Date.now() * 0.005) * 0.5)} />
-        ) : edgeType === 'resonance' ? (
-           <lineBasicMaterial color="#FFFFFF" transparent opacity={opacity * 0.3} linewidth={0.5} />
-        ) : (
-           <lineBasicMaterial color={lineColor} transparent opacity={opacity} />
-        )}
+        <lineBasicMaterial color={lineColor} transparent opacity={opacity} />
       </line>
       <mesh ref={particleRef}>
         <sphereGeometry args={[isActive ? 0.055 : 0.038, 6, 6]} />
@@ -246,8 +229,7 @@ function NodeLabel({ node, language, SCALE, isSelected, isActiveAudio }: {
   node: SomaticNode; language: 'ru' | 'en'; SCALE: number; isSelected: boolean; isActiveAudio: boolean;
 }) {
   const label = language === 'ru' ? node.nameRu : node.nameEn;
-  const levelRadius = node.level === 'macro' ? 1.2 : (node.level === 'meso' ? 0.7 : 0.3);
-  const radius = (node.currentRadius || levelRadius) * SCALE;
+  const radius = (node.currentRadius || 10) * SCALE;
 
   return (
     <Billboard position={[
@@ -256,15 +238,12 @@ function NodeLabel({ node, language, SCALE, isSelected, isActiveAudio }: {
       (node.z || 0) * SCALE
     ]}>
       <Text
-        raycast={() => null}
-        fontSize={node.level === 'macro' ? 0.22 : (node.level === 'meso' ? 0.16 : 0.12)}
-        color={isSelected || isActiveAudio ? '#DFB757' : (node.level === 'macro' ? '#FFFFFF' : '#D1D7E0')}
+        fontSize={isSelected || isActiveAudio ? 0.19 : 0.14}
+        color={isSelected || isActiveAudio ? '#DFB757' : '#D1D7E0'}
         anchorX="center"
         anchorY="bottom"
-        maxWidth={3.0}
+        maxWidth={2.5}
         font="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfMZhrib2Bg-4.ttf"
-        outlineWidth={0.01}
-        outlineColor="#000000"
       >
         {label}
       </Text>
@@ -364,14 +343,12 @@ function GraphScene({
         if (n.id === 'central-me') {
           tx = 0; ty = 0; tz = 0;
         } else {
-          // Orbit layout around "Me"
-          // Keep new senses nearby
           const seed = Math.sin(idx * 1.5);
-          const dist = 60 + Math.abs(seed) * 80; // Closer orbit radius (was 120 + abs * 150)
-          const angle = idx * ((Math.PI * 2) / Math.max(1, gState.nodes.length - 1)); // distribute evenly
+          const dist = 120 + Math.abs(seed) * 150;
+          const angle = idx * 1.2;
           tx = Math.cos(angle) * dist;
           ty = Math.sin(angle) * dist;
-          tz = Math.cos(idx * 0.5) * 40; // slight Z variation
+          tz = idx * 16 * Math.sin(idx * 0.65); // Multi-layer overlapping shells
         }
       }
 
@@ -399,19 +376,9 @@ function GraphScene({
     if (!gState.nodes.length) return;
     const time = state.clock.elapsedTime;
 
-    const gravityStrength = currentWorld === 'me' ? 0.08 : 0.045; // Stronger center pull in My World
-    let repulsionStrength = 2200;
+    const gravityStrength = 0.045;
+    const repulsionStrength = 2200;
     const attractionStrength = 0.038;
-    
-    // Dynamic Field spacing based on node count
-    if (currentWorld === 'field') {
-      const fieldNodesCount = gState.nodes.length;
-      if (fieldNodesCount < 10) {
-        repulsionStrength = 400 + (fieldNodesCount * 40); // Pack closer when few nodes
-      } else {
-        repulsionStrength = Math.min(2200, 800 + (fieldNodesCount * 20)); // Gradually expand
-      }
-    }
     const damping = 0.76;
 
     // Smooth lerp targeting coordinates
@@ -436,22 +403,6 @@ function GraphScene({
         if (!dx && !dy && !dz) { dx = 0.1; dy = 0.1; dz = 0.1; }
         const distSq = dx*dx + dy*dy + dz*dz;
         const dist = Math.sqrt(distSq);
-
-        // Simple Collision force based on LOD radius
-        const n1Radius = n1.level === 'macro' ? 1.2 : (n1.level === 'meso' ? 0.7 : 0.3);
-        const n2Radius = n2.level === 'macro' ? 1.2 : (n2.level === 'meso' ? 0.7 : 0.3);
-        const minDistance = (n1Radius + n2Radius) * 2.5; // Padding factor
-
-        if (dist > 0.1 && dist < minDistance) {
-          const overlap = minDistance - dist;
-          const collisionForce = overlap * 0.15;
-          n1.vx = (n1.vx || 0) - (dx / dist) * collisionForce;
-          n1.vy = (n1.vy || 0) - (dy / dist) * collisionForce;
-          n1.vz = (n1.vz || 0) - (dz / dist) * collisionForce;
-          n2.vx = (n2.vx || 0) + (dx / dist) * collisionForce;
-          n2.vy = (n2.vy || 0) + (dy / dist) * collisionForce;
-          n2.vz = (n2.vz || 0) + (dz / dist) * collisionForce;
-        }
         if (dist < 310) {
           const force = repulsionStrength / (distSq + 120);
           n1.vx = (n1.vx || 0) - (dx / dist) * force;
@@ -494,18 +445,9 @@ function GraphScene({
         node.x = 0; node.y = 0; node.z = 0;
         node.vx = 0; node.vy = 0; node.vz = 0;
       } else {
-        if (currentWorld === 'me' && node.id !== 'central-me') {
-          // pull towards central-me dynamically instead of a fixed target, or pull to a calculated orbit target
-          // Using targetX, targetY, targetZ as calculated in the setup phase is already an orbit!
-          // We just need to make sure we pull them properly.
-          node.vx = (node.vx || 0) + ((node.targetX || 0) - (node.x || 0)) * gravityStrength;
-          node.vy = (node.vy || 0) + ((node.targetY || 0) - (node.y || 0)) * gravityStrength;
-          node.vz = (node.vz || 0) + ((node.targetZ || 0) - (node.z || 0)) * gravityStrength;
-        } else {
-          node.vx = (node.vx || 0) + ((node.targetX || 0) - (node.x || 0)) * gravityStrength;
-          node.vy = (node.vy || 0) + ((node.targetY || 0) - (node.y || 0)) * gravityStrength;
-          node.vz = (node.vz || 0) + ((node.targetZ || 0) - (node.z || 0)) * gravityStrength;
-        }
+        node.vx = (node.vx || 0) + ((node.targetX || 0) - (node.x || 0)) * gravityStrength;
+        node.vy = (node.vy || 0) + ((node.targetY || 0) - (node.y || 0)) * gravityStrength;
+        node.vz = (node.vz || 0) + ((node.targetZ || 0) - (node.z || 0)) * gravityStrength;
         node.x = (node.x || 0) + (node.vx || 0);
         node.y = (node.y || 0) + (node.vy || 0);
         node.z = (node.z || 0) + (node.vz || 0);
@@ -618,7 +560,6 @@ function GraphScene({
             color={color}
             activity={link.activity}
             isActive={isActive}
-            edgeType={link.type}
           />
         );
       })}
