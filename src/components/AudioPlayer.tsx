@@ -193,7 +193,7 @@ export default function AudioPlayer({
       {/* 2. FULL MAXIMIZED POETIC AUDIO WORKSPACE BOARD (Slide overlay) */}
       {isMaximized && (
         <div 
-          className="fixed md:top-24 top-auto bottom-0 left-0 md:w-[460px] w-full md:h-[calc(100vh-120px)] h-[82vh] bg-[#090D16]/98 border-t md:border-t-0 md:border-r border-white/10 backdrop-blur-lg text-gray-200 z-40 shadow-2xl flex flex-col overflow-hidden animate-slide-in rounded-t-3xl md:rounded-t-none"
+          className={`fixed md:top-24 top-auto bottom-0 left-0 md:w-[460px] w-full md:h-[calc(100vh-120px)] bg-[#090D16]/98 border-t md:border-t-0 md:border-r border-white/10 backdrop-blur-lg text-gray-200 z-40 shadow-2xl flex flex-col overflow-hidden animate-slide-in rounded-t-3xl md:rounded-t-none ${isMaximized ? 'h-[82vh]' : 'h-[64px]'}`}
           id="maximized-audio-board"
         >
           {/* Header */}

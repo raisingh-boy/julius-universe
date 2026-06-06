@@ -31,7 +31,7 @@ const DOMAIN_DOT_COLORS: Record<Domain, string> = {
 
 export default function App() {
   // Global States
-  const [language, setLanguage] = useState<'ru' | 'en'>('ru');
+  const [language, setLanguage] = useState<'ru' | 'en'>('en');
   const [showOnboarding, setShowOnboarding] = useState<boolean>(true);
   const [currentWorld, setCurrentWorld] = useState<World>('atlas');
   const [userEmail, setUserEmail] = useState<string | null>('botovroman45@gmail.com'); // default logged-in user email
