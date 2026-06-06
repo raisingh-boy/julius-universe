@@ -148,7 +148,7 @@ export default function AudioPlayer({
       {/* 1. COMPACT FIXED MINI PLAYER HUD (Always docked at bottom-right viewport if minimized) */}
       {!isMaximized && (
         <div 
-          className="fixed bottom-4 right-4 w-[360px] bg-[#0E1528]/95 border border-white/10 backdrop-blur-md p-3 rounded-2xl flex items-center justify-between shadow-2xl z-40 cursor-pointer hover:border-yellow-500/30 transition-all animate-slide-in select-none"
+          className="fixed top-20 md:top-auto md:bottom-20 right-4 left-4 md:left-auto w-[calc(100%-2rem)] md:w-[360px] bg-[#0E1528]/95 border border-white/10 backdrop-blur-md p-3 rounded-2xl flex items-center justify-between shadow-2xl z-40 cursor-pointer hover:border-yellow-500/30 transition-all animate-slide-in select-none"
           onClick={() => setIsMaximized(true)}
           id="mini-deck-player"
         >
@@ -193,7 +193,7 @@ export default function AudioPlayer({
       {/* 2. FULL MAXIMIZED POETIC AUDIO WORKSPACE BOARD (Slide overlay) */}
       {isMaximized && (
         <div 
-          className="fixed md:top-24 top-auto bottom-0 left-0 md:w-[460px] w-full md:h-[calc(100vh-120px)] h-[82vh] bg-[#090D16]/98 border-t md:border-t-0 md:border-r border-white/10 backdrop-blur-lg text-gray-200 z-40 shadow-2xl flex flex-col overflow-hidden animate-slide-in rounded-t-3xl md:rounded-t-none"
+          className="fixed md:top-24 top-auto bottom-0 left-0 md:w-[460px] w-full md:h-[calc(100vh-120px)] h-[85vh] bg-[#090D16]/98 border-t md:border-t-0 md:border-r border-white/10 backdrop-blur-lg text-gray-200 z-40 shadow-2xl flex flex-col overflow-hidden animate-slide-in rounded-t-3xl md:rounded-t-none pb-[env(safe-area-inset-bottom)]"
           id="maximized-audio-board"
         >
           {/* Header */}

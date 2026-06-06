@@ -358,6 +358,7 @@ export const SAMPLE_AUDIO: AudioItem[] = [
     titleEn: 'Gregory Bateson and Somatic Synergies',
     authorRu: 'Лекция: Проф. Григорий Шевелев',
     authorEn: 'Lecture: Prof. Gregory Shevelev',
+    audioUrl: '/audio/test.mp3',
     sourceRu: 'Конференция Мэйси 2026',
     sourceEn: 'Macy Conference 2026',
     year: 2026,
